@@ -1,0 +1,592 @@
+---
+title: "Data Analysis"
+author: "Angelo Sang"
+date: "11/27/2021"
+output: pdf_document
+---
+
+---
+title: "Data Analysis"
+author: "Angelo Sang"
+date: "11/27/2021"
+output: pdf_document
+---
+
+# Business Understanding
+My-Duka is an online shop that recently launched their services. As a new company, they
+would like to use effective and strategic marketing techniques to reach their
+clientelle.
+
+
+# Specifying the analytic Question
+My-duka would like to understand which customers are highly likely to click on an add
+ontheir site and vice-versa.
+
+
+# Define the Metric for Success
+Thorough Data Cleaning Perform Univariate analysis Perform Bivariate 
+
+# Experimental design
+Data Understanding Univariate Analysis Bivariate Analysis Plotting the summaries
+
+# Data Cleaning
+```{r}
+#specify the path where the file is located
+library("data.table")
+```
+- obtaining the path to the working directrory
+
+```{r}
+getwd()
+```
+## Loading the datasets
+```{r}
+#library("readr")
+df <- fread("http://bit.ly/IPAdvertisingData")
+head(df)
+
+```
+## Previewing the top of the dataset
+```{r}
+advert_df <- data.frame(df)
+head(advert_df)
+
+```
+
+## Previewing the summary of the dataset
+```{r}
+summary(advert_df)
+
+```
+
+## Properties of the dataset
+```{r}
+length(advert_df)
+```
+
+```{r}
+#dimensions
+dim(advert_df)
+```
+```{r}
+# Column names
+colnames(advert_df)
+```
+
+```{r}
+# Column data types
+sapply(advert_df, class)
+
+```
+# Data Cleaning
+## Missing values
+```{r}
+#Checking the sum of missing values per column
+colSums(is.na(advert_df))
+
+```
+
+## Duplicates
+```{r}
+duplicated_rows <- advert_df[duplicated(advert_df),]
+duplicated_rows
+```
+
+## Assigning the appropriate datatypes for each column
+- Changing the timestamp datatypes from factor to date_time
+```{r}
+#changing the timestamp datatype from factor to date_time
+advert_df$Timestamp <- as.Date(advert_df$Timestamp, format = "%Y-%m-%s-%h-%m-
+%s")
+#checking the new datatype for the Timestamp column
+sapply(advert_df, class)
+```
+
+# Univariate Analysis
+## Daily Time Spent on Site
+```{r}
+#This column represents the amount of time that a user spends on the website
+# measures of central tendency
+# mean
+mean(advert_df$Daily.Time.Spent.on.Site)
+## [1] 65.0002
+# median
+median(advert_df$Daily.Time.Spent.on.Site)
+## [1] 68.215
+# mode
+x <- advert_df$Daily.Time.Spent.on.Site
+#sort(x)
+names(table(x))[table(x)==max(table(x))]
+## [1] "62.26" "75.55" "77.05" "78.76" "84.53"
+#each of the values printed below appear thrice in the dataset
+#distribution
+hist(x, col=c("darkorange"))
+
+```
+- The users spend an average 65.002 minutes on the website.
+- The modal time is “62.26” “75.55” “77.05” “78.76” “84.53”
+- The median time is 68.215.
+- The distribution above is left-skewed.
+- The highest frequency is 80 units of time(minutes).
+
+## Age
+```{r}
+# Age of the user
+#This column represents the Age of the user
+# measures of central tendency
+# mean
+mean(advert_df$Age)
+## [1] 36.009
+# median
+median(advert_df$Age)
+## [1] 35
+# mode
+Age_x <- advert_df$Age
+#sort(Age_x)
+names(table(Age_x))[table(Age_x)==max(table(Age_x))]
+## [1] "31"
+#each of the values printed below appear thrice in the dataset
+#distribution
+hist(Age_x, col = c("pink"))
+```
+- The age distribution is right skewed
+- The respondents on the website are mostly 25-40 years old.
+- The mean age is 36.
+- The median age is 35
+
+## Area Income
+```{r}
+#income 
+# mean
+mean(advert_df$Area.Income)
+## [1] 55000
+# median
+median(advert_df$Area.Income)
+## [1] 57012.3
+# mode
+Area_income_x <- advert_df$Area.Income
+#sort(Daily.Internet.Usage_x)
+#names(table(Area_income_x))[table(Area_income_x)==max(table(Area_income_x))]
+#each of the values printed below appear thrice in the dataset
+#distribution
+hist(Area_income_x, col = c('darkred'))
+```
+- The income distribution is left skewed
+- The respondents on the website mostly earn between 55,000 to 70,000.
+- The mean income is 55,000.
+- The median income is 57,012.
+
+## Daily Internet Usage
+```{r}
+#This column represents the amount of data that the user consumers in a day
+# measures of central tendency
+# mean
+mean(advert_df$Daily.Internet.Usage)
+## [1] 180.0001
+# median
+median(advert_df$Daily.Internet.Usage)
+## [1] 183.13
+# mode
+Daily.Internet.Usage_x <- advert_df$Daily.Internet.Usage
+#sort(Daily.Internet.Usage_x)
+names(table(Daily.Internet.Usage_x))[table(Daily.Internet.Usage_x)==max(table
+(Daily.Internet.Usage_x))]
+```
+```{r}
+#each of the values printed below appear thrice in the dataset
+#distribution
+hist(Daily.Internet.Usage_x, col = c('brown'))
+```
+
+- The mean data usage is 180 units.
+- The median data usage is 183.13 units .
+
+## City
+```{r}
+#city where the user is located
+# measures of central tendency
+length(levels(advert_df$City))
+## [1] 969
+#there are 969 unique cities in the dataset
+# mode
+City_x <- advert_df$City
+#sort(City_x) #this code gives an ordered list of all the elements in the cities column
+#The modal cities in the dataset
+names(table(City_x))[table(City_x)==max(table(City_x))]
+```
+## Male
+```{r}
+#gender of the user
+#1 indicates that the user is male while 0 indicates that they are female
+#obtaining the unique levels in the gender(Male column)
+unique(factor(advert_df$Male))
+```
+
+```{r}
+Male_x <- table(advert_df$Male)
+#distribution
+barplot(Male_x, main="Gender Distribution",col=c("darkgreen"),xlab="Gender")
+```
+
+## Country
+```{r}
+#country where the user belongs
+# measures of central tendency
+# mode
+Country_x <- advert_df$Country
+#levels(Country_x) #this code gives the names of the countries
+#There are 237 unique countries represented in the dataset
+length(levels(Country_x))
+## [1] 237
+#the modal countries in the dataset
+names(table(Country_x))[table(Country_x)==max(table(Country_x))]
+```
+
+## Clicked on Ad
+```{r}
+#zero indicates that a user did not click on an add while 1 indicates that a user clicked on an add
+# measures of central tendency
+#levels(advert_df$Clicked.on.Ad) #this code does not work
+unique(factor(advert_df$Clicked.on.Ad))
+
+```
+```{r}
+Clicked.on.Ad_x <- table(advert_df$Clicked.on.Ad)
+#sort(Daily.Internet.Usage_x)
+names(table(Clicked.on.Ad_x))[table(Clicked.on.Ad_x)==max(table(Clicked.on.Ad_x))]
+```
+```{r}
+#distribution
+barplot(Clicked.on.Ad_x, main="0: Did not click on ad
+ 1: Clicked on ad " , col=c("darkgreen"),xlab="Clicked.on.Ad")
+
+```
+
+# Bivariate Analysis and Multivariate Graphical Data analysis
+```{r}
+advert_df2 <- subset(advert_df, select = c(Daily.Time.Spent.on.Site, 
+Age,Area.Income,Daily.Internet.Usage,Male,Clicked.on.Ad ))
+head(advert_df2)
+
+```
+
+## Correlation
+```{r}
+#The default method is Pearson, but we can also compute Spearman or Kendall coefficients.
+mydata = cor(advert_df2, method = c("spearman"))
+mydata1= cor(advert_df2, method = c("kendall"))
+mydata2= cor(advert_df2, method = c("pearson"))
+mydata #spearman
+
+```
+- Using the 3 correlation coefficients to get the correlation between the features, we can see 
+that the correlation is very low and negative in most cases.
+- This means that most of the variables are NOT dependent of each other
+- Significance levels (p-values) can also be generated using the rcorr function which is
+found in the Hmisc package.
+- install the required package and load the library.
+
+```{r}
+#install_version("latticeExtra")
+#install.packages("Hmisc", dependencies = T)
+library("Hmisc")
+```
+- This generates one table of correlation coefficients (the correlation matrix) and another 
+table of the p-values. By default, the correlations and p-values are stored in an object of 
+class type rcorr.
+
+```{r}
+#mydata.coeff = mydata.rcorr$r
+#mydata.p = mydata.rcorr$P
+library(corrplot)
+## corrplot 0.84 loaded
+corrplot(mydata)
+
+```
+- A default correlation matrix plot (called a Correlogram) is generated. Positive
+correlations are displayed in a blue scale while negative correlations are displayed
+in a red scale
+- There is very minimal positive correlation between the variables in the data
+
+
+## The Plots below are scatterplots of a few pairs of variables
+### Time spent on the site vs age of teh user
+```{r}
+#Time spent on the site vs age of the user
+# Libraries
+library(ggplot2)
+# create data
+Time_on_site <- advert_df$Daily.Time.Spent.on.Site
+Age_of_user <- advert_df$Age
+data <- data.frame(Time_on_site,Age_of_user)
+# Plot
+ggplot(data, aes(x=Time_on_site, y=Age_of_user)) + geom_point()
+```
+
+### Age of the user vs daily internet usage
+```{r}
+Daily_internet_usage <- advert_df$Daily.Internet.Usage
+Age_of_user <- advert_df$Age
+data1 <- data.frame(Daily_internet_usage,Age_of_user)
+# Plot
+ggplot(data1, aes(x=Daily_internet_usage, y=Age_of_user)) + geom_point()
+
+```
+
+### Time spenton the site vs area.income
+```{r}
+Area_Income <- advert_df$Area.Income
+Time_Spent_on_Site <- advert_df$Daily.Time.Spent.on.Site
+data2 <- data.frame(Area_Income,Time_Spent_on_Site)
+# Plot
+ggplot(data2, aes(x=Area_Income, y=Time_Spent_on_Site)) + geom_point()
+
+```
+
+### Time spent on the site vs daily internet usage
+```{r}
+Time_on_site <- advert_df$Daily.Time.Spent.on.Site
+Internet_usage <- advert_df$Daily.Internet.Usage
+data3 <- data.frame(Time_on_site,Internet_usage)
+# Plot
+ggplot(data3, aes(x=Time_on_site, y=Internet_usage)) + geom_point()
+
+```
+### seperating the data Clicked and Gender columns
+```{r}
+#creating a new column with null values
+advert_df2["Female"] <- NA
+dim(advert_df2)
+
+```
+
+```{r}
+#populating the column with false values from the male column
+advert_df2$Female <- advert_df2$Male == 0
+dim(advert_df2)
+```
+
+```{r}
+#converting the column to nu,eric
+dim(advert_df2 <- apply(advert_df2, 2, as.numeric))
+```
+
+## Gender Vs Clicked on Ad
+```{r}
+library(tidyverse)
+```
+
+```{r}
+#Male respondents who clicked on an add
+dim(advert_df%>% filter(Male == 1 , Clicked.on.Ad == 1))
+```
+
+```{r}
+#Male respondents did not click on an add
+dim(advert_df%>% filter(Male == 1, Clicked.on.Ad == 0))
+```
+
+```{r}
+#Female respondents who clicked on an add 
+dim(advert_df%>% filter(Male == 0 , Clicked.on.Ad == 1))
+
+```
+
+```{r}
+#Female respondents who clicked did not on an add
+dim(advert_df%>% filter(Male == 0, Clicked.on.Ad == 0))
+
+```
+
+```{r}
+Clicked_vs_gender <- c( 231 , 250 , 269 , 250 )
+
+# barchart with added parameters
+barplot(Clicked_vs_gender, main = " Clicked_vs_gender " , xlab = " Label ", 
+ylab = " Count ",
+names.arg = c("Male&Clicked Male&No-click Female&Clicked Female&No-Click"),
+col = "darkred",
+horiz = FALSE)
+
+
+```
+
+# Multivariate Analysis
+```{r}
+# A glimpse of the data
+library(dplyr)
+glimpse(advert_df2)
+```
+
+```{r}
+# One hot encoding of the factor variables.
+# dummify the data
+library(caret)
+dmy <- dummyVars(" ~ .", data = advert_df2)
+dummy_df <- data.frame(predict(dmy, newdata = advert_df2))
+#print(dummy_df)
+glimpse(dummy_df)
+
+```
+```{r}
+sapply(dummy_df, class)
+```
+
+```{r}
+#removing the revenue column from the data
+#we select all the column indexes before 30
+dummy_df2 <-
+subset(dummy_df, select = -Clicked.on.Ad)
+dim(dummy_df2)
+
+```
+```{r}
+dummy_df.class<- advert_df2[, "Clicked.on.Ad"]
+```
+
+# SCALING VS NORMALIZATION
+## Scaling
+- In this step the data is transformed to fit within the range between 0 and 1
+```{r}
+dummy_df2_scaled <- scale(dummy_df2)
+summary(dummy_df2_scaled)
+```
+## Normalizing
+- Normalization is a technique often applied to change the values of numeric columns in the 
+dataset to a common scale, without distorting differences in the ranges of values.
+```{r}
+dummy_df2_norm <- as.data.frame(apply(dummy_df2, 2, function(x) (x -
+min(x))/(max(x)-min(x))))
+summary(dummy_df2_norm)
+
+```
+
+## The distance Matrix
+- How the elements are represented in the Euclidean space
+- There are 4 distinct quarters which means that four of the elements in the data explian a 
+great percentage of the variance.
+
+```{r}
+library(factoextra)
+## Welcome! Want to learn more? See two factoextra-related books at https://goo.gl/ve3WBa
+distance <- get_dist(dummy_df2_norm)
+fviz_dist(distance, gradient = list(low = "#00AFBB", mid = "white", high =
+"#FC4E07"))
+```
+- The normalized dataset has a smaller range for the values which are between 0 and 1 
+unlike the standardized dataset which has values ranging from -2 to 2.9
+
+# Finding the Optimal number of Clusters
+
+# Method 1: Elbow method
+```{r}
+# Searching for the optimal number of clusters
+# # Elbow method
+# Searching for the optimal number of clusters
+# # Elbow method
+library(factoextra)
+fviz_nbclust(dummy_df2_norm, kmeans, method = "wss") + geom_vline(xintercept = 4, linetype = 2) + labs(subtitle = "Elbow method")
+```
+
+# Method 2: Silhouette
+```{r}
+library(cluster)
+fviz_nbclust(dummy_df2_norm, kmeans, method = "silhouette")
+
+```
+
+# Implementing the Solution
+
+# K-MEANS CLUSTERING
+## Using 4 clusters [Elbow Method]
+```{r}
+outputk <- kmeans(dummy_df2_norm, 4)
+
+```
+
+Results
+```{r}
+# Previewing the number of records in each cluster
+outputk$size
+
+```
+
+The cluster center datapoints Per attribute
+```{r}
+outputk$centers
+
+```
+
+## Visualising the clusters of the whole dataset
+```{r}
+options(repr.plot.width = 11, repr.plot.height = 6)
+fviz_cluster(outputk, dummy_df2_norm)
+
+```
+-while using four points, we can see that the data is divided into two distinct clusters first then two more clusters from the two.
+
+## Visualizing variable datatypes on a scatter plot
+```{r}
+# Plotting two variables to see how their data points 
+# have been distributed in the cluster
+# Product Related, vs Product Related Duration
+plot(dummy_df2_norm[, 5:6], col = outputk$cluster)
+
+```
+
+# HIERACHICAL CLUSTERING
+```{r}
+d <- dist(dummy_df2_norm, method = "euclidean")
+# We then apply hierarchical clustering using the Ward's method
+res.hc <- hclust(d, method = "ward.D2")
+# Lastly we plot the obtained dendrogram
+#--
+plot(res.hc, cex = 0.6, hang = -1)
+
+```
+
+## Challenging the solution
+
+## K-MEANS CLUSTERING
+- Using a different number of clusters 2 clusters using the silhouette method
+
+### Using 2 clusters [Silhouette Method]
+```{r}
+outputs <- kmeans(dummy_df2_norm, 2)
+```
+
+Results
+```{r}
+# Previewing the number of records in each cluster
+outputs$size
+```
+
+## Visualising the clusters of the whole dataset
+```{r}
+options(repr.plot.width = 11, repr.plot.height = 6)
+fviz_cluster(outputs, dummy_df2_norm)
+
+```
+
+## Summary
+Compasiron Between K-MEANS and HIERACHICAL clustering From the Analysis, we can 
+identify that:
+
+1. K-means Cluster Analysis performs much better in identyfing patterns as compared to 
+Hierrachical clustering.
+
+2. Since the dataset is large, visualizing hierrachical clusters is abit cumbersome as 
+compared to K-means clustering.
+
+3. K-means clustering yields better reults using the optimal number of clusters which can 
+be determined by Elbow and Silhouette Methods
+
+4. Clicking on an add is dependent on the gender of the respondent
+
+5. We can conclude that,The order of the factors that affect if a respondent clicks on an ad 
+is:
+a) Gender
+b) Daily Internet Usage
+c) Daily time spent on the site
+d) Income
+

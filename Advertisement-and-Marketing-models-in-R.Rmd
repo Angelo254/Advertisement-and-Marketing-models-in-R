@@ -1,0 +1,1039 @@
+---
+title: "Advertisement Modelling in R"
+author: "Angelo Sang"
+date: "11/27/2021"
+output: pdf_document
+---
+
+---
+title: "Marketing and advertisement modelling in R"
+author: "Angelo Sang"
+date: "11/27/2021"
+output: pdf_document
+---
+
+
+# Problem Statement
+
+Kira Plastinina is a Russian brand that is sold through a defunct chain of retail stores in 
+Russia, Ukraine, Kazakhstan, Belarus, China, Philippines, and Armenia.
+The brand’s Sales and Marketing team would like to understand their customer’s behavior 
+from data that they have collected over the past year.
+More specifically, they would like to learn the characteristics of customer groups.
+Perform clustering stating insights drawn from your analysis and visualizations.
+Upon implementation, provide comparisons between K-Means clustering vs Hierarchical 
+clustering highlighting the strengths and limitations of each approach in the context of your 
+analysis.
+Your findings should help inform the team in formulating the marketing and sales
+strategies of the brand.
+
+
+# Markdown Sections.
+
+1.Problem Definition
+2.Data Sourcing
+3.Check the Data
+4.Perform Data Cleaning
+5.Perform Exploratory Data Analysis (Univariate, Bivariate & Multivariate)
+6.Implement the Solution
+7.Challenge the Solution
+8.Follow up Questions
+
+
+# Data
+
+The dataset consists of 10 numerical and 8 categorical attributes.
+The ‘Revenue’ attribute can be used as the class label.
+
+
+# Types of Pages: Administrative, Informational
+
+## Time spent on pages: Admin Duration and Info Duration
+
+“Administrative”, “Administrative Duration”, “Informational”, “Informational Duration”, 
+“Product Related” and “Product Related Duration” represents the number of different types 
+of pages visited by the visitor in that session and total time spent in each of these page 
+categories.
+The values of these features are derived from the URL information of the pages visited by 
+the user and updated in real-time when a user takes an action, e.g. moving from one page to 
+another.
+
+
+## Metrics: Bounce rate, Exit rate and Page Value
+
+The “Bounce Rate”, “Exit Rate” and “Page Value” features represent the metrics measured 
+by “Google Analytics” for each page in the e-commerce site.
+The value of the “Bounce Rate” feature for a web page refers to the percentage of visitors 
+who enter the site from that page and then leave (“bounce”) without triggering any other 
+requests to the analytics server during that session.
+The value of the “Exit Rate” feature for a specific web page is calculated as for all pageviews 
+to the page, the percentage that was the last in the session.
+The “Page Value” feature represents the average value for a web page that a user visited 
+before completing an e-commerce transaction.
+
+
+## Type of days: Speical or Ordinary
+
+The “Special Day” feature indicates the closeness of the site visiting time to a specific 
+special day (e.g. Mother’s Day, Valentine’s Day) in which the sessions are more likely to be 
+finalized with the transaction.
+The value of this attribute is determined by considering the dynamics of e-commerce such 
+as the duration between the order date and delivery date. For example, for Valentina’s day, 
+this value takes a nonzero value between February 2 and February 12, zero before and 
+after this date unless it is close to another special day, and its maximum value of 1 on 
+February 8.
+
+
+## Type of visit, Operating system, Browser and region(location)
+
+The dataset also includes the operating system, browser, region, traffic type, visitor type as 
+returning or new visitor, a Boolean value indicating whether the date of the visit is 
+weekend, and month of the year.
+
+
+# Installing packages.
+
+```{r}
+#install.packages("devtools")
+#library(devtools)
+#install_github("vqv/ggbiplot")
+#install.packages("rtools")
+#install.packages("DataExplorer") 
+#install.packages("Hmisc")
+#install.packages("pastecs")
+#install.packages("psych")
+#install.packages("corrplot")
+#install.packages("factoextra")
+#install.packages("caret")
+
+```
+# Loading the libraries
+```{r}
+library("data.table")
+library(tidyverse)
+library(magrittr)
+library(warn = -1)
+library("ggbiplot")
+library(ggplot2)
+library(lattice)
+library(corrplot)
+library(DataExplorer)
+library(Hmisc)
+library(pastecs)
+library(psych)
+library(factoextra)
+library(caret)
+
+```
+
+# Loading the data
+```{r}
+#specify the path where the file is located
+library("data.table")
+
+```
+- obtaining the path to the working directrory
+
+```{r}
+getwd()
+```
+
+# Loading the datasets
+```{r}
+library(data.table)
+df <- fread("http://bit.ly/EcommerceCustomersDataset")
+head(df)
+```
+
+# Previewing the top of the dataset
+```{r}
+market_df <- data.frame(df)
+head(market_df)
+```
+
+# Previewing the summary of the dataset
+```{r}
+summary(market_df)
+
+```
+# Properties of the dataset
+Length
+```{r}
+length(market_df)
+
+```
+# Dimensions
+```{r}
+dim(market_df)
+
+```
+
+# Column Names
+```{r}
+colnames(market_df)
+
+```
+
+# Column data types
+```{r}
+sapply(market_df, class)
+```
+# Data Cleaning
+## Missing Values
+```{r}
+sum(is.na(market_df))
+
+```
+
+## Missing values per column
+```{r}
+#Checking the sum of missing values per column
+colSums(is.na(market_df))
+
+```
+## The column with null values
+```{r}
+# Return the column names containing missing observations
+list_na <- colnames(market_df)[ apply(market_df, 2, anyNA) ]
+list_na
+```
+
+## Duplicates
+```{r}
+duplicated_rows <- market_df[duplicated(market_df),]
+dim(duplicated_rows)
+```
+
+## Removing duplicates
+```{r}
+new_market_df <- market_df[-which(duplicated(market_df)), ]
+dim(new_market_df)
+```
+
+# Exploring the data with Data Explorer
+```{r}
+library(DataExplorer)
+plot_missing(new_market_df) ## Are there missing values, and what is the missing data profile?
+
+```
+
+```{r}
+plot_bar(new_market_df) ## How does the categorical frequency for each discrete variable look like?
+```
+```{r}
+plot_histogram(new_market_df) ## What is the distribution of each continuous variable?
+```
+
+```{r}
+plot_str(new_market_df)
+```
+
+## Data Types
+```{r}
+sapply(new_market_df, class)
+
+```
+
+# Perform Exploratory Data Analysis (Univariate, Bivariate & 
+Multivariate)
+
+## Univariate Analysis
+
+###Administrative
+```{r}
+unique(new_market_df$Administrative)
+
+```
+
+```{r}
+factor(unique(new_market_df$Administrative))
+```
+- There are 14 missing values in this column thus we shall use the mean/mode to impute.
+- Before performing any analysis on the column we have to drop the missing values.
+
+
+```{r}
+length(new_market_df$Administrative)
+```
+
+```{r}
+dim(new_market_df)
+
+```
+
+```{r}
+sum(is.na(new_market_df))
+
+```
+
+```{r}
+#there are 96 missing values in the new_market_df dataframe
+markert_df2 <- new_market_df[-which(is.na(new_market_df)), ]
+sum(is.na(markert_df2))
+
+```
+
+```{r}
+dim(markert_df2)
+
+```
+
+
+```{r}
+colSums(is.na(markert_df2))
+```
+```{r}
+summary(markert_df2$Administrative)
+```
+
+```{r}
+# median
+median(markert_df2$Administrative)
+
+```
+
+```{r}
+# mode
+Administrative_x <- markert_df2$Administrative
+#sort(Daily.Internet.Usage_x)
+names(table(Administrative_x))[table(Administrative_x)==max(table(Administrative_x))]
+```
+```{r}
+#each of the values printed below appear thrice in the dataset
+#distribution
+hist(Administrative_x, col=c("darkorange"))
+```
+
+- The adm distribution is right skewed.
+- The highest value in the administrative column is 27
+- The lowest value in the column is zero and it has the highest frequency.
+- The mean is 2.34
+
+# Administrative_Duration
+```{r}
+length(unique(markert_df2$Administrative_Duration))
+
+```
+
+```{r}
+summary(markert_df2$Administrative_Duration)
+
+```
+
+```{r}
+adm_duration <- markert_df2$Administrative_Duration
+# median
+median(adm_duration)
+
+```
+
+```{r}
+# mode
+#sort(adm_duration)
+names(table(adm_duration))[table(adm_duration)==max(table(adm_duration ))]
+
+```
+
+```{r}
+#distribution
+hist(adm_duration, col=c("orange"))
+```
+
+- The adm_duration distribution is right skewed.
+- The highest value in the administrative column is 3398.75
+- The lowest value in the column is 0 and it has the highest frequency.
+- The mean is 81.68
+- The median is 9
+
+# Information
+```{r}
+length(unique(markert_df2$Informational))
+
+```
+
+```{r}
+#there are 17 unique elements in Informational column
+summary(markert_df2$Informational)
+```
+
+```{r}
+adm_info <- markert_df2$Informational
+# median
+median(adm_info)
+```
+
+```{r}
+# mode
+#sort(adm_duration)
+names(table(adm_info))[table(adm_info)==max(table(adm_info ))]
+
+```
+
+```{r}
+#The modal value in the information dataset is 0
+#distribution
+hist(adm_info,breaks = 16 , main="With breaks=16", col=c("brown"))
+
+```
+
+# Informational_Duration
+```{r}
+length(unique(markert_df2$Informational_Duration))
+```
+
+```{r}
+summary(markert_df2$Informational_Duration)
+```
+
+```{r}
+adm_info_dur <- markert_df2$Informational_Duration
+# median
+median(adm_info)
+
+```
+
+```{r}
+# mode
+#sort(adm_info_dur)
+names(table(adm_info_dur))[table(adm_info_dur)==max(table(adm_info_dur ))]
+```
+
+```{r}
+#distribution
+hist(adm_info_dur,col=c("brown"))
+
+```
+
+# ProductRelated
+```{r}
+length(unique(markert_df2$ProductRelated))
+
+```
+```{r}
+summary(markert_df2$ProductRelated)
+
+```
+
+```{r}
+adm_ProductRelated <- markert_df2$ProductRelated
+# median
+median(adm_ProductRelated)
+
+```
+
+```{r}
+# mode
+#sort(adm_info_dur)
+names(table(adm_ProductRelated))[table(adm_ProductRelated)==max(table(adm_ProductRelated ))]
+
+```
+
+```{r}
+#distribution
+hist(adm_ProductRelated,col=c("brown"))
+
+```
+
+# ProductRelated_Duration
+```{r}
+length(unique(markert_df2$ProductRelated_Duration))
+
+```
+
+```{r}
+summary(markert_df2$ProductRelated_Duration)
+
+```
+
+```{r}
+adm_Product_dur <- markert_df2$ProductRelated_Duration
+# median
+median(adm_Product_dur)
+
+```
+
+```{r}
+# mode
+#sort(adm_info_dur)
+names(table(adm_Product_dur))[table(adm_Product_dur)==max(table(adm_Product_dur ))]
+
+```
+```{r}
+#distribution
+hist(adm_Product_dur,breaks=30,col=c("brown"))
+```
+
+# BounceRates
+```{r}
+length(unique(markert_df2$BounceRates))
+
+```
+
+```{r}
+summary(markert_df2$BounceRates)
+```
+
+```{r}
+adm_Bounce <- markert_df2$BounceRates
+# median
+median(adm_Bounce)
+
+```
+
+```{r}
+# mode
+#sort(adm_info_dur)
+names(table(adm_Bounce))[table(adm_Bounce)==max(table(adm_Bounce ))]
+```
+
+```{r}
+#distribution
+hist(adm_Bounce,col=c("brown"))
+```
+
+# ExitRates
+```{r}
+length(unique(markert_df2$ExitRates))
+
+```
+
+```{r}
+summary(markert_df2$ExitRates)
+```
+
+
+```{r}
+adm_ExitRates <- markert_df2$ExitRates
+# median
+median(adm_ExitRates)
+
+```
+
+```{r}
+# mode
+#sort(adm_info_dur)
+names(table(adm_ExitRates))[table(adm_ExitRates)==max(table(adm_ExitRates ))]
+```
+
+```{r}
+#distribution
+hist(adm_ExitRates,col=c("brown"))
+```
+
+# Page Values
+```{r}
+length(unique(markert_df2$PageValues))
+```
+
+```{r}
+summary(markert_df2$PageValues)
+
+```
+
+```{r}
+adm_PageValues <- markert_df2$PageValues
+# median
+median(adm_PageValues)
+
+```
+
+```{r}
+# mode
+#sort(adm_info_dur)
+names(table(adm_PageValues))[table(adm_PageValues)==max(table(adm_PageValues 
+))]
+```
+
+```{r}
+#distribution
+hist(adm_PageValues,col=c("brown"))
+```
+
+# SpecialDay
+```{r}
+length(unique(markert_df2$SpecialDay))
+```
+
+```{r}
+summary(markert_df2$SpecialDay)
+```
+
+```{r}
+adm_SpecialDay <- markert_df2$SpecialDay
+# median
+median(adm_SpecialDay)
+```
+
+```{r}
+# mode
+#sort(adm_info_dur)
+names(table(adm_SpecialDay))[table(adm_SpecialDay)==max(table(adm_SpecialDay 
+))]
+```
+
+```{r}
+#distribution
+hist(adm_SpecialDay,col=c("brown"))
+```
+
+```{r}
+# Simple Bar Plot
+counts <- table(adm_SpecialDay)
+barplot(counts, main="Special day",col=c("brown"),
+ xlab="Number of Days")
+
+```
+
+# Month
+```{r}
+length(unique(markert_df2$Month))
+```
+
+```{r}
+summary(markert_df2$Month)
+```
+
+```{r}
+adm_Month <- markert_df2$Month
+# mode
+#sort(adm_info_dur)
+names(table(adm_Month))[table(adm_Month)==max(table(adm_Month ))]
+```
+
+```{r}
+#distribution
+# Simple Bar Plot
+counts <- table(adm_Month)
+barplot(counts, main="Distribution per month",col=c("brown"),
+ xlab="Months")
+```
+
+# OperatingSystems
+```{r}
+length(unique(markert_df2$OperatingSystems))
+```
+
+```{r}
+summary(markert_df2$OperatingSystems)
+
+```
+
+```{r}
+adm_OperatingSystems <- markert_df2$OperatingSystems
+# median
+median(adm_OperatingSystems)
+
+```
+
+```{r}
+# mode
+#sort(adm_info_dur)
+names(table(adm_OperatingSystems))[table(adm_OperatingSystems)==max(table(adm_OperatingSystems ))]
+```
+```{r}
+#distribution
+counts <- table(adm_OperatingSystems)
+barplot(counts, main="Distribution of Operating Systems",col=c("brown"),
+ xlab="Operating Systems")
+
+```
+
+#Browser
+```{r}
+length(unique(markert_df2$Browser))
+```
+
+```{r}
+summary(markert_df2$Browser)
+```
+
+```{r}
+adm_Browser <- markert_df2$Browser
+# median
+median(adm_Browser)
+
+```
+
+```{r}
+# mode
+#sort(adm_info_dur)
+names(table(adm_Browser))[table(adm_Browser)==max(table(adm_Browser ))]
+```
+
+```{r}
+#distribution
+counts <- table(adm_Browser)
+barplot(counts, main="Distribution of Browser",col=c("brown"),
+ xlab="Browser")
+
+```
+
+# Region
+```{r}
+length(unique(markert_df2$Region))
+```
+
+```{r}
+summary(markert_df2$Region)
+```
+
+```{r}
+adm_Region <- markert_df2$Region
+# median
+median(adm_Region)
+
+```
+
+```{r}
+# mode
+#sort(adm_Region)
+names(table(adm_Region))[table(adm_Region)==max(table(adm_Region ))]
+```
+
+```{r}
+#distribution
+counts <- table(adm_Region)
+barplot(counts, main="Distribution of Region",col=c("brown"),
+ xlab="Region")
+
+```
+
+# TrafficType
+```{r}
+length(unique(markert_df2$TrafficType))
+```
+
+```{r}
+summary(markert_df2$TrafficType)
+```
+
+```{r}
+adm_TrafficType <- markert_df2$TrafficType
+# median
+median(adm_TrafficType)
+
+```
+
+```{r}
+# mode
+#sort(adm_info_dur)
+names(table(adm_TrafficType))[table(adm_TrafficType)==max(table(adm_TrafficType ))]
+```
+```{r}
+#distribution
+counts <- table(adm_TrafficType)
+barplot(counts, main="Distribution of Region",col=c("brown"),
+ xlab="Region")
+```
+
+# VisitorType
+```{r}
+length(unique(markert_df2$VisitorType))
+```
+
+```{r}
+adm_VisitorType <- markert_df2$VisitorType
+
+#sort(adm_info_dur)
+names(table(adm_VisitorType))[table(adm_VisitorType)==max(table(adm_VisitorType ))]
+```
+
+```{r}
+#distribution
+counts <- table(adm_VisitorType)
+barplot(counts, main="Distribution of Days",col=c("brown"),
+ xlab="Weekend")
+```
+
+#Weekend
+```{r}
+length(unique(markert_df2$Weekend))
+```
+
+```{r}
+adm_Weekend <- markert_df2$Weekend
+# median
+median(adm_Weekend)
+```
+
+```{r}
+# mode
+#sort(adm_Weekend)
+names(table(adm_Weekend))[table(adm_Weekend)==max(table(adm_Weekend ))]
+
+```
+
+```{r}
+#distribution
+counts <- table(adm_Weekend)
+barplot(counts, main="Distribution of Days",col=c("brown"),
+ xlab="Weekend")
+
+```
+
+# Revenue
+```{r}
+length(unique(markert_df2$Revenue))
+```
+
+```{r}
+summary(markert_df2$Revenue)
+```
+
+```{r}
+adm_Revenue <- markert_df2$Revenue
+# median
+median(adm_Revenue)
+```
+
+```{r}
+# mode
+#sort(adm_info_dur)
+names(table(adm_Revenue))[table(adm_Revenue)==max(table(adm_Revenue ))]
+
+```
+
+```{r}
+#distribution
+counts <- table(adm_Revenue)
+barplot(counts, main="Distribution of Revenue",col=c("brown"),
+ xlab="Revenue")
+
+```
+
+# Bivariate Analysis
+```{r}
+# calculate correlations
+correlations <- cor(markert_df2[,1:10])
+correlations
+```
+## Correlation Plot
+```{r}
+# create correlation plot
+library(corrplot)
+## corrplot 0.84 loaded
+corrplot(correlations, method="circle")
+
+```
+
+- From the plot above, we can see that most of the variables have low Positive and Negative 
+correlation
+
+## Pair Plots
+```{r}
+pairs(markert_df2[,1:10])
+
+```
+
+## Sites Visited Duration
+### Scatter plot of Administrative_Duration vs Informational_Duration
+```{r}
+library(ggplot2)
+ggplot(markert_df2, aes(x = Administrative_Duration, y =
+Informational_Duration)) +
+ geom_point(size = 2, color= "brown", shape = 23)+
+ geom_smooth(method=lm, linetype="dashed",color="darkred", 
+fill="blue")+
+ labs(title = "Scatter plot of Info Duration vs Adm Duration")
+# `geom_smooth()` using formula 'y ~ x'
+```
+- There is a positive non-linear correlation between the time spent on the Administrative site 
+and the Informational site
+
+## Metrics
+
+### Scatter plot Bounce vs Exit Rates Scatter Plot
+```{r}
+plot(ExitRates ~ BounceRates, dat = markert_df2, 
+ col = "brown",
+ main = "Bounce vs Exit Rates Scatter Plot")
+
+```
+
+### Stacked bar chart:Revenue vs Day Type
+```{r}
+library(magrittr)
+markert_df2 %>%
+ ggplot(aes(Revenue)) +
+ geom_bar(aes(fill = Weekend))+
+ labs(title = "Stacked Chart: Revenue by Day Type")
+
+```
+- From the stacked chart, we can see that most of the revenue is generated during the week 
+and not over the weekend.
+
+### Revenue vs Month
+```{r}
+# Stacked bar chart: Revenue vs Month
+markert_df2 %>%
+ ggplot(aes(Revenue)) +
+ geom_bar(aes(fill = Month))+
+ labs(title = "Stacked Chart: Revenue by Month")
+
+```
+
+## Type of visitor
+###Stacked bar chart: Visitor Type vs Month
+```{r}
+markert_df2 %>%
+ ggplot(aes(Month)) +
+ geom_bar(aes(fill = VisitorType))+
+ labs(title = "Stacked Chart: Visitor Type by Month")
+
+```
+
+# Multivariate Analysis
+
+```{r}
+# A glimpse of the data
+library(dplyr)
+glimpse(markert_df2)
+```
+## Dummify the data
+```{r}
+# One hot encoding of the factor variables.
+library(caret)
+dmy <- dummyVars(" ~ .", data = markert_df2)
+dummy_df <- data.frame(predict(dmy, newdata = markert_df2))
+#print(dummy_df)
+glimpse(dummy_df)
+```
+## Checking the resultant datatypes
+```{r}
+sapply(dummy_df, class)
+```
+## Seperating the dependent and independent variables
+```{r}
+#removing the revenue column from the data
+#we select all the column indexes before 30
+dummy_df2 <- dummy_df[, -c(30:31)]
+dim(dummy_df2)
+```
+
+```{r}
+dummy_df.class<- markert_df2[, "Revenue"]
+```
+
+
+# SCALING VS NORMALIZATION
+## Scaling
+- In this step the data is transformed to fit withing the range between 0 and 1
+
+```{r}
+dummy_df2_scaled <- scale(dummy_df2)
+summary(dummy_df2_scaled)
+```
+## Normalizing
+- Normalization is a technique often applied to change the values of numeric columns in the 
+dataset to a common scale, without distorting differences in the ranges of values.
+
+```{r}
+dummy_df2_norm <- as.data.frame(apply(dummy_df2, 2, function(x) (x -
+min(x))/(max(x)-min(x))))
+summary(dummy_df2_norm)
+
+```
+
+
+## Finding the Optimal number of clusters
+## Method 1: Elbow method
+```{r}
+# Searching for the optimal number of clusters
+# # Elbow method
+# Searching for the optimal number of clusters
+# # Elbow method
+library(factoextra)
+library(ggplot2)
+## Welcome! Want to learn more? See two factoextra-related books at https://goo.gl/ve3WBa
+fviz_nbclust(dummy_df2_norm, kmeans, method = "wss") +
+ geom_vline(xintercept = 4, linetype = 2)+
+ labs(subtitle = "Elbow method")
+
+```
+
+## Method 2: Silhouette
+```{r}
+library(cluster)
+fviz_nbclust(dummy_df2_norm, kmeans, method = "silhouette")
+
+```
+
+
+# Implementing the Solution
+
+# K-MEANS CLUSTERING
+```{r}
+outputk <- kmeans(dummy_df2_norm, 4)
+```
+
+```{r}
+# Previewing the number of records in each cluster
+outputk$size
+```
+
+## The cluster center datapoints Per attribute
+```{r}
+outputk$centers
+```
+
+## Visualizing the clusters of the whole dataset
+```{r}
+options(repr.plot.width = 11, repr.plot.height = 6)
+fviz_cluster(outputk, dummy_df2_norm)
+
+```
+
+## Visualizing variable datatypes on a scatter plot
+```{r}
+# Plotting two variables to see how their data points 
+# have been distributed in the cluster
+# Product Related, vs Product Related Duration
+plot(dummy_df2_norm[, 5:6], col = outputk$cluster)
+
+```
+
+
+# HIERACHICAL CLUSTERING
+```{r}
+d <- dist(dummy_df2_norm, method = "euclidean")
+# We then apply hierarchical clustering using the Ward's method
+res.hc <- hclust(d, method = "ward.D2")
+# Lastly we plot the obtained dendrogram
+#--
+plot(res.hc, cex = 0.6, hang = -1)
+
+```
+
+
+## Challenging the Solution
+- Using a different number of clusters 9 clusters using the silhouette method
+
+# K-MEANS CLUSTERING
+```{r}
+outputs <- kmeans(dummy_df2_norm, 9)
+```
+
+### Results
+```{r}
+# Previewing the number of records in each cluster
+outputs$size
+```
+
+## Visualizing the clusters of the whole dataset
+```{r}
+options(repr.plot.width = 11, repr.plot.height = 6)
+fviz_cluster(outputs, dummy_df2_norm)
+
+```
+
+## Summary
+Compasiron Between K-MEANS and HIERACHICAL clustering From the Analysis, we can 
+identify that:
+1. K-means Cluster Analysis performs much better in identyfing patterns as compared to 
+Hierrachical clustering.
+
+2. Since the dataset is large, visualizing hierrachical clusters is abit cumbersome as 
+compared to K-means clustering.
+
+3. K-means clustering yields better results using the optimal number of clusters which can 
+be determined by Elbow and Silhouette Methods
